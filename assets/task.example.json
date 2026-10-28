@@ -1,0 +1,18 @@
+{
+  "task_id": "replace-with-unique-task-id",
+  "instance_root": "PATH_TO_INSTANCE",
+  "task_root": "PATH_OUTSIDE_INSTANCE",
+  "target_launcher": "PCL2_OR_OTHER",
+  "minecraft_version": "DISCOVER",
+  "loader": "DISCOVER",
+  "target_language": "zh_cn",
+  "translator_credit": null,
+  "include_credit_easter_egg": false,
+  "gui_authorized": false,
+  "paid_service_authorized": false,
+  "budget": {"currency": "CNY", "total_limit": null, "ledger": "ledger.sqlite"},
+  "phase": "identify",
+  "status": "pending",
+  "artifacts": {},
+  "next_step": "Inspect environment and existing authorizations without exposing secrets."
+}

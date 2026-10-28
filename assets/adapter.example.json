@@ -1,0 +1,8 @@
+{
+  "provider": "replace-with-verified-provider-and-region",
+  "identity": "replace-with-adapter-model-prompt-pricing-version",
+  "currency": "CNY",
+  "command": ["python", "example_adapter.py"],
+  "timeout_seconds": 120,
+  "enforces_max_cost": true
+}

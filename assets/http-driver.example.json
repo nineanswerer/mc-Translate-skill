@@ -1,0 +1,8 @@
+{
+  "provider": "replace-with-provider-and-region",
+  "identity": "replace-with-provider-model-prompt-pricing-config-version",
+  "currency": "CNY",
+  "command": ["python", "openai_compatible_adapter.py", "--config", "work/provider.json"],
+  "timeout_seconds": 120,
+  "enforces_max_cost": true
+}

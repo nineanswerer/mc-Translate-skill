@@ -1,0 +1,6 @@
+{
+  "version": "v1",
+  "terms": [
+    {"id": "fictional-material", "source_forms": ["Sanguinite"], "preferred": "血晶石", "allowed_variants": []}
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "endpoint": "https://replace-with-official-provider-endpoint/v1/chat/completions",
+  "api_key_env": "MODPACK_TRANSLATION_API_KEY",
+  "model": "replace-with-current-model",
+  "currency": "CNY",
+  "input_price_per_million": "0",
+  "output_price_per_million": "0",
+  "flat_fee_per_request": "0",
+  "verified_max_prompt_utf8_bytes": 4000,
+  "verified_max_input_tokens": 8000,
+  "max_output_tokens": 3000,
+  "output_token_parameter": "max_tokens",
+  "json_response_format": true,
+  "network_timeout_seconds": 90,
+  "provider_pricing_and_token_bound_verified": false
+}

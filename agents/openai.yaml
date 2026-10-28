@@ -1,0 +1,4 @@
+interface:
+  display_name: "我的世界整合包汉化"
+  short_description: "Minecraft modpack localization from audit to delivery"
+  default_prompt: "使用 $minecraft-modpack-localization 完成这个整合包的汉化、验收与交付。"

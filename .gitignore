@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.env
+*.env
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+*.db
+*.log
+*.partial
+work/
+test-data-tmp/
