@@ -2,13 +2,37 @@
   "schema": 1,
   "request_base": {
     "model": "REPLACE_WITH_VERIFIED_MODEL",
-    "prompt_version": "v1",
+    "prompt_version": "v1.1-locale-aware",
     "glossary_version": "v1",
-    "glossary": {"apple": "苹果"}
+    "glossary": {
+      "apple": "苹果"
+    },
+    "source_locale": "en_us",
+    "target_locale": "zh_cn"
   },
   "items": [
-    {"id": "display-001", "key": "item.example.apple", "kind": "item_name", "source": "Apple", "context": "Inventory item name", "status": "pending_translation"},
-    {"id": "display-002", "key": "item.example.already_translated", "kind": "item_name", "source": "Sword", "existing_zh": "剑", "status": "pending_translation"},
-    {"id": "functional-001", "key": "create.flap_display.cycles.alphabet", "kind": "functional", "source": " ABC;DEF", "status": "pending_translation"}
+    {
+      "id": "display-001",
+      "key": "item.example.apple",
+      "kind": "item_name",
+      "source": "Apple",
+      "context": "Inventory item name",
+      "status": "pending_translation"
+    },
+    {
+      "id": "display-002",
+      "key": "item.example.already_translated",
+      "kind": "item_name",
+      "source": "Sword",
+      "existing_zh": "剑",
+      "status": "pending_translation"
+    },
+    {
+      "id": "functional-001",
+      "key": "create.flap_display.cycles.alphabet",
+      "kind": "functional",
+      "source": " ABC;DEF",
+      "status": "pending_translation"
+    }
   ]
 }

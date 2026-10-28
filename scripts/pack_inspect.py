@@ -2,10 +2,10 @@
 """Read-only, static Minecraft Java pack inventory and *candidate* language layering.
 
 Usage: python pack_inspect.py INSTANCE --output PATH [--locks JSON_FILE]
-Only Java edition assets/*/lang/{en_us,zh_cn}.json are inspected. Selected file
+Only Java edition language JSON for the configured source/target locales is inspected. Selected file
 resource packs use options.txt order (low to high). Mod JARs are treated as one
 unordered tier: conflicts stay unresolved. Runtime-generated resources, hidden
-required-pack positioning, other locales and arbitrary text formats need adapters
+required-pack positioning and arbitrary text formats need adapters
 and real-game verification. Nothing in INSTANCE is written.
 """
 from __future__ import annotations
@@ -23,7 +23,8 @@ try:
 except ModuleNotFoundError:
     tomllib = None
 
-ASSET = re.compile(r'^assets/([^/]+)/lang/(en_us|zh_cn)\.json$', re.I)
+ASSET = re.compile(r'^assets/([^/]+)/lang/([a-z][a-z0-9_-]{1,31})\.json$', re.I)
+LOCALE = re.compile(r'^[a-z][a-z0-9_-]{1,31}$')
 HAN = re.compile(r'[\u3400-\u9fff]')
 DEFAULT_LOCKS = {'create:create.flap_display.cycles.alphabet'}
 MAX_LANGUAGE_BYTES = 16 * 1024 * 1024
@@ -71,10 +72,15 @@ def no_duplicate_keys(pairs):
 
 
 class Inspector:
-    def __init__(self, root: Path, locked: set[str]):
+    def __init__(self, root: Path, locked: set[str], source_locale="en_us", target_locale="zh_cn"):
         self.root = root.resolve(strict=True)
         if not self.root.is_dir():
             raise ValueError('instance must be a directory')
+        self.source_locale = source_locale.lower()
+        self.target_locale = target_locale.lower()
+        if not LOCALE.fullmatch(self.source_locale) or not LOCALE.fullmatch(self.target_locale) or self.source_locale == self.target_locale:
+            raise ValueError("distinct, valid source/target locales required")
+        self.locales = (self.source_locale, self.target_locale)
         self.locked = locked
         self.errors = []
         self.hashes = {}
@@ -95,7 +101,7 @@ class Inspector:
 
     def add_json(self, tier: dict, member: str, raw: bytes, source: str, evidence_hash: str):
         match = ASSET.fullmatch(member.replace('\\', '/'))
-        if not match:
+        if not match or match[2].lower() not in self.locales:
             return
         if len(raw) > MAX_LANGUAGE_BYTES:
             self.error(source, 'language JSON exceeds 16 MiB'); return
@@ -120,7 +126,8 @@ class Inspector:
         try:
             with zipfile.ZipFile(path) as archive:
                 for member in archive.infolist():
-                    if not ASSET.fullmatch(member.filename):
+                    selected = ASSET.fullmatch(member.filename)
+                    if not selected or selected[2].lower() not in self.locales:
                         continue
                     source = rel + '!/' + member.filename
                     if member.file_size > MAX_LANGUAGE_BYTES:
@@ -146,7 +153,8 @@ class Inspector:
                 if item.is_symlink() or not item.is_file():
                     continue
                 member = item.relative_to(path).as_posix()
-                if not ASSET.fullmatch(member):
+                selected = ASSET.fullmatch(member)
+                if not selected or selected[2].lower() not in self.locales:
                     continue
                 rel = self.relative(item)
                 if item.stat().st_size > MAX_LANGUAGE_BYTES:
@@ -233,7 +241,7 @@ class Inspector:
         result = []
         for identity in all_keys:
             resolved = {}
-            for locale in ('en_us', 'zh_cn'):
+            for locale in self.locales:
                 candidates = []
                 for rank, tier in enumerate(self.tiers):
                     records = tier['entries'].get((identity, locale), [])
@@ -245,17 +253,20 @@ class Inspector:
                     winning = candidates[-1]
                     distinct = {row['value'] for row in winning['sources']}
                     resolved[locale] = {'status': 'ambiguous_same_tier' if len(distinct) > 1 else 'candidate_only', 'value': next(iter(distinct)) if len(distinct) == 1 else None, 'winning_tier': winning['tier_id'], 'layers': candidates}
-            en, zh = resolved['en_us'], resolved['zh_cn']
+            en, zh = resolved[self.source_locale], resolved[self.target_locale]
             raw_key = identity.split(':', 1)[1]
             if identity in self.locked or raw_key in self.locked:
                 action = 'locked_functional_value_do_not_translate'
             elif zh['status'] != 'absent_in_scanned_sources':
-                action = 'preserve_existing_chinese_and_review' if zh['status'] != 'candidate_only' or not HAN.search(zh['value'] or '') else 'preserve_existing_chinese'
+                if self.target_locale.startswith('zh_'):
+                    action = 'preserve_existing_chinese_and_review' if zh['status'] != 'candidate_only' or not HAN.search(zh['value'] or '') else 'preserve_existing_chinese'
+                else:
+                    action = 'preserve_existing_translation' if zh['status'] == 'candidate_only' else 'preserve_existing_translation_and_review'
             elif en['status'] == 'candidate_only':
                 action = 'translation_candidate_requires_context'
             else:
                 action = 'manual_review'
-            result.append({'id': identity, 'action': action, 'en_us': en, 'zh_cn': zh, 'runtime_winner_verified': False})
+            result.append({'id': identity, 'action': action, self.source_locale: en, self.target_locale: zh, 'runtime_winner_verified': False})
         return result
 
     def run(self):
@@ -268,7 +279,7 @@ class Inspector:
                 if n:
                     categories[kind].append({'path': rel, 'files': n, 'bytes': size, 'contents_read': False})
         entries = self.resolved()
-        return {'schema': 1, 'root_top_level_directories': sorted(p.name for p in self.root.iterdir() if p.is_dir() and not p.is_symlink()), 'source_mod_jars': [self.relative(p) for p in jars], 'top_level_mod_count': len(jars), 'categories': categories, 'selected_options': options, 'default_options_file': defaults, 'defaultoptions_mod_config': defaultoptions, 'dynamic_or_nonfile_packs_unresolved': self.dynamic, 'inspection_limits': ['Only Java assets/*/lang/en_us.json and zh_cn.json.', 'Mod JARs are one unordered tier; same-tier conflicting values are ambiguous.', 'File pack order is inferred from options.txt; runtime and required-pack ordering must be verified.', 'Dynamic packs, custom scripts, quest SNBT, books and hard-coded text require additional adapters.', 'Existing zh_cn values are protected, not certified semantically correct.'], 'source_hashes': self.hashes, 'entries': entries, 'errors': self.errors, 'instance_modified': False, 'runtime_winner_verified': False}
+        return {'schema': 1, 'source_locale': self.source_locale, 'target_locale': self.target_locale, 'root_top_level_directories': sorted(p.name for p in self.root.iterdir() if p.is_dir() and not p.is_symlink()), 'source_mod_jars': [self.relative(p) for p in jars], 'top_level_mod_count': len(jars), 'categories': categories, 'selected_options': options, 'default_options_file': defaults, 'defaultoptions_mod_config': defaultoptions, 'dynamic_or_nonfile_packs_unresolved': self.dynamic, 'inspection_limits': [f'Only Java assets/*/lang/{self.source_locale}.json and {self.target_locale}.json.', 'Mod JARs are one unordered tier; same-tier conflicting values are ambiguous.', 'File pack order is inferred from options.txt; runtime and required-pack ordering must be verified.', 'Dynamic packs, custom scripts, quest SNBT, books and hard-coded text require additional adapters.', 'Existing target-locale values are protected, not certified semantically correct.'], 'source_hashes': self.hashes, 'entries': entries, 'errors': self.errors, 'instance_modified': False, 'runtime_winner_verified': False}
 
 
 def main(argv=None):
@@ -276,7 +287,11 @@ def main(argv=None):
     parser.add_argument('instance', type=Path)
     parser.add_argument('--output', type=Path, required=True, help='JSON report outside instance directory')
     parser.add_argument('--locks', type=Path, help='JSON object with locked_keys array (namespace:key or raw key)')
+    parser.add_argument('--source-locale', default='en_us')
+    parser.add_argument('--target-locale', default='zh_cn')
     args = parser.parse_args(argv)
+    if not LOCALE.fullmatch(args.source_locale.lower()) or not LOCALE.fullmatch(args.target_locale.lower()) or args.source_locale.lower() == args.target_locale.lower():
+        parser.error('distinct valid source and target locales required')
     root = args.instance.resolve(strict=True)
     output = args.output.resolve()
     if output.is_relative_to(root):
@@ -288,7 +303,7 @@ def main(argv=None):
         if not isinstance(values, list) or not all(isinstance(x, str) for x in values):
             parser.error('locks file requires a locked_keys string array')
         locks.update(values)
-    report = Inspector(root, locks).run()
+    report = Inspector(root, locks, args.source_locale, args.target_locale).run()
     output.parent.mkdir(parents=True, exist_ok=True)
     if output.exists():
         parser.error('refusing to overwrite an existing report')

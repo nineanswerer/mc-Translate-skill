@@ -2,7 +2,7 @@
   "task_id": "replace-with-unique-task-id",
   "instance_root": "PATH_TO_INSTANCE",
   "task_root": "PATH_OUTSIDE_INSTANCE",
-  "target_launcher": "PCL2_OR_OTHER",
+  "target_launcher": "CHOOSE_FOR_THIS_PROJECT",
   "minecraft_version": "DISCOVER",
   "loader": "DISCOVER",
   "target_language": "zh_cn",
@@ -10,9 +10,21 @@
   "include_credit_easter_egg": false,
   "gui_authorized": false,
   "paid_service_authorized": false,
-  "budget": {"currency": "CNY", "total_limit": null, "ledger": "ledger.sqlite"},
+  "budget": {
+    "currency": "CNY",
+    "total_limit": null,
+    "ledger": "ledger.sqlite"
+  },
   "phase": "identify",
   "status": "pending",
   "artifacts": {},
-  "next_step": "Inspect environment and existing authorizations without exposing secrets."
+  "next_step": "Inspect environment and existing authorizations without exposing secrets.",
+  "source_language": "en_us",
+  "source_profile": "profile.json",
+  "delivery": {
+    "kind": "choose_for_this_project",
+    "launcher": null
+  },
+  "adapter_overrides": {},
+  "experience_store": "WORK_DIRECTORY/experiences"
 }

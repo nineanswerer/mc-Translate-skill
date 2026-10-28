@@ -1,0 +1,10 @@
+{
+  "id":"replace-with-scoped-lesson-id",
+  "status":"observed",
+  "applicability":"project_only",
+  "scope":{"minecraft_versions":["VERIFY"],"loaders":["VERIFY"],"adapter_version":"VERIFY"},
+  "finding":"Describe evidence separately from suspected causes.",
+  "evidence":[{"path":"validation/example.json","sha256":"REPLACE_WITH_ACTUAL_FILE_SHA256"}],
+  "regression_evidence":[],
+  "proposed_change":"Propose a bounded adapter or rule change; do not automatically generalize."
+}

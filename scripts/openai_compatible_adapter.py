@@ -1,8 +1,8 @@
 """User-configured HTTPS Chat Completions adapter; no provider/model/price is hard-coded."""
-import argparse,json,os,sys,urllib.parse,urllib.request
+import argparse,json,os,re,sys,urllib.parse,urllib.request
 from decimal import Decimal,InvalidOperation,ROUND_CEILING
 
-SYSTEM='Translate the supplied Minecraft display text into Simplified Chinese using the supplied context and glossary. Preserve technical identifiers, placeholders, formatting codes and exact numbers. Return a JSON object with a translations array of strings, one per entry in the same order. Do not add commentary.'
+SYSTEM='Translate the supplied Minecraft display text from {source_locale} into {target_language} ({target_locale}) using the supplied context and glossary. Preserve technical identifiers, placeholders, formatting codes and exact numbers. Return a JSON object with a translations array of strings, one per entry in the same order. Do not add commentary.'
 
 def money(value):
     try:result=Decimal(str(value))
@@ -22,8 +22,12 @@ def prepare(packet,config,env):
         rows=req.get('entries')
         if rows is None:rows=[{'source':req['source'],'key':req.get('key','')}]
         if not isinstance(rows,list) or not rows or any(not isinstance(x,dict) or not isinstance(x.get('source'),str) for x in rows):return None
-        user_payload=json.dumps({'entries':rows,'glossary':req.get('glossary',{}),'instructions':req.get('instructions','')},ensure_ascii=False,separators=(',',':'))
-        messages=[{'role':'system','content':SYSTEM},{'role':'user','content':user_payload}]
+        source_locale=req.get('source_locale','en_us');target_locale=req.get('target_locale','zh_cn')
+        if not isinstance(source_locale,str) or not isinstance(target_locale,str) or not re.fullmatch(r'[a-z][a-z0-9_-]{1,31}',source_locale) or not re.fullmatch(r'[a-z][a-z0-9_-]{1,31}',target_locale) or source_locale==target_locale:return None
+        target_language={'zh_cn':'Simplified Chinese','zh_tw':'Traditional Chinese'}.get(target_locale,target_locale)
+        system=SYSTEM.format(source_locale=source_locale,target_language=target_language,target_locale=target_locale)
+        user_payload=json.dumps({'source_locale':source_locale,'target_locale':target_locale,'entries':rows,'glossary':req.get('glossary',{}),'instructions':req.get('instructions','')},ensure_ascii=False,separators=(',',':'))
+        messages=[{'role':'system','content':system},{'role':'user','content':user_payload}]
         payload_bytes=len(json.dumps(messages,ensure_ascii=False,separators=(',',':')).encode('utf-8'))
         max_prompt_bytes=int(config['verified_max_prompt_utf8_bytes']);max_input=int(config['verified_max_input_tokens']);max_output=int(config['max_output_tokens'])
         if min(max_prompt_bytes,max_input,max_output)<=0 or payload_bytes>max_prompt_bytes:return None

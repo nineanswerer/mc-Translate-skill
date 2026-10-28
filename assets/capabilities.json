@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "meaning": "implemented means shipped executable behavior, not runtime compatibility or complete coverage",
+  "capabilities": [
+    {"id":"project_discovery","status":"implemented","scope":"CurseForge, Modrinth and MultiMC/Prism JSON metadata; bounded mod metadata indicators","script":"project_profile.py"},
+    {"id":"language_json","status":"implemented","scope":"configured source and target locale JSON in top-level JARs and selected file resource packs","script":"pack_inspect.py"},
+    {"id":"external_translation","status":"implemented","scope":"configured local adapter or compatible HTTPS Chat Completions provider; pricing and usage must be verified","script":"batch_translate.py"},
+    {"id":"curseforge_zip","status":"implemented","scope":"reviewed staging tree and supplied manifest; no installer/game execution","script":"package_cf.py"},
+    {"id":"legacy_lang","status":"needs_adapter","scope":"legacy key=value language files; escaping and version must be tested"},
+    {"id":"quests_books_scripts_menus","status":"needs_adapter","scope":"SNBT, Patchouli, KubeJS, FancyMenu and other pack-specific structured display formats"},
+    {"id":"hardcoded_runtime","status":"needs_adapter","scope":"loader/version-specific display bridge only after evidence"},
+    {"id":"image_text","status":"needs_adapter","scope":"user-authorized OCR and image editing, font/layout verification"},
+    {"id":"modrinth_output","status":"needs_adapter","scope":"metadata discovery does not implement mrpack export"},
+    {"id":"bedrock","status":"unsupported","scope":"this release targets Minecraft Java workflows"}
+  ]
+}

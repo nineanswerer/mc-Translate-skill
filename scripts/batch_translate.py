@@ -54,7 +54,7 @@ def plan_rows(plan,guard,batch_size):
         if not isinstance(row,dict) or not isinstance(row.get('id'),str) or not row['id'] or row['id'] in ids:raise ValueError('every item requires a unique string id')
         ids.add(row['id']);result={'id':row['id'],'key':row.get('key',''),'status':'skipped','reason':None}
         if row.get('status')!='pending_translation':result['reason']='not_explicitly_pending_translation'
-        elif row.get('already_correct') is True or (isinstance(row.get('existing_zh'),str) and bool(row['existing_zh'].strip())):result['reason']='existing_translation_preserved'
+        elif row.get('already_correct') is True or any(isinstance(row.get(field),str) and bool(row[field].strip()) for field in ('existing_translation','existing_zh')):result['reason']='existing_translation_preserved'
         elif row.get('locked') is True or str(row.get('kind','')).lower() in locked_types or guard.classification(row.get('key','')).startswith('locked_'):result['reason']='functional_or_structural_field_locked'
         elif not isinstance(row.get('source'),str) or not row['source']:result['reason']='missing_source_needs_review'
         elif re.search(r'[\u3400-\u9fff]',row['source']):result['reason']='source_contains_chinese_needs_review'

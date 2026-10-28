@@ -1,27 +1,15 @@
-# Java 整合包语言资源只读盘点
+# 可配置语言资源盘点
 
-`pack_inspect.py` 需要 Python 3.11 或更高版本，只读取 Minecraft Java 实例，结果必须写到实例目录之外，且不会覆盖已有报告。它不调用网络或付费 API，不导出存档、日志或账号。报告包含被检出的原文和既有译文，应按项目资料妥善保管，不应直接发布未经隐私检查的报告。
-
-```text
-python path/to/pack_inspect.py "INSTANCE_DIRECTORY" --output "WORK_DIRECTORY/inventory.json" --locks "WORK_DIRECTORY/locks.json"
-```
-
-`--locks` 可省略。附加锁定文件格式如下，键可以写成 `命名空间:语言键` 或未带命名空间的语言键。脚本已内置锁定 `create:create.flap_display.cycles.alphabet`，并保护值中的空格、ASCII 分号及其顺序。该字段是功能数据，并不是要求所有 `alphabet` 键一律如此。
-
-```json
-{"locked_keys": ["example:example.functional.delimiter", "example.other.locked.key"]}
-```
-
-会盘点顶层 `mods/*.jar`，不把 `mods/.connector` 等生成 JAR 当源模组；识别这些缓存及存档/日志等敏感目录的文件数量和字节数，不读取其内容。按照 `options.txt` 中 `resourcePacks` 的顺序解析选中 `file/` 目录及 ZIP，记录模组与选中资源包中 `assets/<namespace>/lang/en_us.json` 和 `zh_cn.json` 的文件级 SHA-256、来源、层级和候选值。检测 `config/defaultoptions-common.toml` 中 `defaultResourcePacks` 是否遗漏已选文件包，并记录 journal 是否存在。
-
-`candidate_only` 表示按可见静态资源推导的候选值，不代表真正运行时胜出；`ambiguous_same_tier` 表示两个源模组在同一命名空间和语言键提供不同值，不能猜顺序。动态资源、模组提供的资源包、required/fixed priority、全局资源和未扫描目录均须另查日志或验收。已有 zh_cn 文本一律标记保留，英文或非中文的 zh 值标记需人工/上下文复核；此标记不证明译文正确。翻译候选只表示当前扫描来源中没有 zh_cn，仍需建立上下文、术语表、占位符检查和预算。
-
-`errors` 必须人工处理；命令退出码 0 只表示报告已写入，不表示所有内容都已解析或游戏验收。JSON 仅识别 UTF-8 严格格式与字符串值，超过 16 MiB、非法 JSON 或符号链接会记录错误或跳过。KubeJS、SNBT、Patchouli、GUI、硬编码文本和其他语言格式要通过独立适配器处理，不要据此宣称全包覆盖。
-
-测试时先切换到可写的临时工作目录，再执行：
+`scripts/pack_inspect.py` 需要 Python 3.11+，只读 Java 实例，报告写在实例之外且不覆盖既有文件。默认 `en_us → zh_cn` 兼容旧版，也可以配置其他源和目标 locale：
 
 ```text
-python "path/to/test_pack_inspect.py" -v
+python scripts/pack_inspect.py INSTANCE --output WORK/inventory.json --source-locale de_de --target-locale zh_tw --locks WORK/locks.json
 ```
 
-测试创建并删除随机命名的独立夹具，覆盖低到高优先级、同层冲突、功能键锁定、保留已有中文、动态资源不确定、非法 JSON、源文件未改变和输出目录防护；不触碰真实实例。
+`--locks` 可省略，内容为 `{"locked_keys":["namespace:language.key","raw.language.key"]}`。已知 Create 功能字符表在出现时默认锁定，这不是要求其他包安装 Create 或使用本案例的字母表。
+
+脚本扫描顶层源 JAR 及 options 中按低到高排列的已选 file 资源包，只读所选两个 locale 的 JSON。输出明确 source_locale、target_locale，各条目的语言字段使用相应代码；默认调用仍保留 en_us/zh_cn 字段。已有目标译文保留，缺失项仅标候选，不自动发给翻译 API。动态资源、同层冲突和 required/fixed 规则需另查；严格重复键/非法 JSON 会列 errors，不是静默当成没文本。
+
+资源包、Default Options 等被检测出只表示静态线索，运行是否生效仍须日志/用户验收。工具不解析 SNBT、书籍、脚本、旧版 .lang 或图片，不能称全包覆盖。Java/加载器和版本发现用 `project_profile.py`，适配范围见 [project-adapters.md](project-adapters.md)。
+
+测试使用合成 JAR、文件包、不同 locale 和元数据，不读取真实密钥、不联网、不操作游戏。

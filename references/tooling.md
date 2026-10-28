@@ -21,3 +21,8 @@
 `python terminology.py --glossary work/glossary.json --catalog work/reviewed.jsonl` 对照术语表定位候选不一致；样式见 `assets/glossary.example.json`，每行至少含 `id`、`source`、`translation`，已审例外使用 `term_exceptions` 列表。它不修改译文，词形、双关和上下文可能造成误报，需结合语境裁决，不能当语义通过证明。`scripts/task_state.py` 的用法和状态迁移见 [workflow.md](workflow.md)。
 
 `python package_cf.py --stage work/reviewed-overrides --manifest work/manifest.json --out work/new-pack.zip` 将已审查覆盖树制成根 manifest + overrides。它拒绝现有输出、常见个人文件、符号链接和重复路径，逐文件验证前后哈希及 ZIP CRC，部分文件在输出同目录；通过硬链接创建新输出而不覆盖既有文件，目标文件系统不支持硬链接时停止并保留 partial，需检查并使用受支持文件系统。它只检查基础元数据、不检查内嵌 JAR/全部隐私/运行时，不完成自动 PCL 导入和游戏验收。
+
+
+v1.1 的请求支持 `source_locale` / `target_locale`，默认 en_us / zh_cn。目标 zh_tw 使用繁体提示；其他代码按指定 locale 处理，不能把 locale 选择当作语言质量验证。请求身份包含显式 locale，改语言后不要复用旧的省略语言请求；升级 prompt_version 和 adapter identity。输入 token 预算应按新提示重新核实。批量项目可用 `existing_translation` 保留目标语言已有译文，旧 `existing_zh` 仍兼容。
+
+项目发现工具的命令见 [project-adapters.md](project-adapters.md)。经验可使用 `experience_record.py --entry WORK/lesson.json --evidence-root WORK --store WORK/experiences` 按 `assets/experience.example.json` 记录：它验证证据文件哈希、禁止覆盖已有记录，并要求明确适用范围和 observed/inferred/confirmed 状态；不会执行回归测试、自动更新规则或把一个案例晋升为通用事实。公开经验前仍需去敏审核。
